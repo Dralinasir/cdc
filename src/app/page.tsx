@@ -14,7 +14,7 @@ type Student = {
 
 const START_YEAR = 2026;
 const CAPACITY = 55;
-const STORAGE_KEY = "uos-cdc-attendance-2026";
+const STORAGE_KEY = "uos-PAIB-attendance-2026";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -323,7 +323,7 @@ export default function Page() {
       ];
     });
 
-    downloadCSV("UOS_CDC_Full_Attendance_2026.csv", [headers, ...rows]);
+    downloadCSV("UOS_PAIB_Full_Attendance_2026.csv", [headers, ...rows]);
   }
 
   function exportMonthlyReport() {
@@ -352,7 +352,7 @@ export default function Page() {
       ];
     });
 
-    downloadCSV(`UOS_CDC_${activeMonth}_Attendance.csv`, [
+    downloadCSV(`UOS_PAIB_${activeMonth}_Attendance.csv`, [
       headers,
       ...rows,
     ]);
@@ -401,10 +401,10 @@ export default function Page() {
                   University of Sargodha
                 </p>
                 <h1 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">
-                  CDC Attendance Portal
+                  PAIB Attendance Portal
                 </h1>
                 <p className="mt-2 text-sm text-slate-300">
-                  Career Development Center · In-charge: Sir Asif
+                   Pakistan Artificial Intelligence Blockchain · In-charge: Sir Asif
                 </p>
               </div>
             </div>
