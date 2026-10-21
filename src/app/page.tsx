@@ -1,9 +1,10 @@
 
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type FormEvent } from "react";
 
 type AttendanceStatus = "P" | "A" | "L";
+type ClassMode = "Physical" | "Online";
 type Student = {
   id: string;
   name: string;
@@ -14,7 +15,7 @@ type Student = {
 
 const START_YEAR = 2026;
 const CAPACITY = 55;
-const STORAGE_KEY = "uos-PAIB-attendance-2026";
+const STORAGE_KEY = "paib-attendance-2026";
 
 const pad = (n: number) => String(n).padStart(2, "0");
 
@@ -79,15 +80,19 @@ function prettyDate(date: string) {
   });
 }
 
-function getStats(student: Student, dates = DATES) {
+function attendanceKey(date: string, mode: ClassMode) {
+  return `${mode}:${date}`;
+}
+
+function getStats(student: Student, dates = DATES, mode: ClassMode = "Physical") {
   let present = 0;
   let absent = 0;
   let leave = 0;
 
   dates.forEach((date) => {
-    if (student.attendance[date] === "P") present++;
-    if (student.attendance[date] === "A") absent++;
-    if (student.attendance[date] === "L") leave++;
+    if (student.attendance[attendanceKey(date, mode)] === "P") present++;
+    if (student.attendance[attendanceKey(date, mode)] === "A") absent++;
+    if (student.attendance[attendanceKey(date, mode)] === "L") leave++;
   });
 
   const marked = present + absent + leave;
@@ -114,6 +119,7 @@ export default function Page() {
   const [departmentFilter, setDepartmentFilter] = useState("All");
   const [activeMonth, setActiveMonth] = useState("2026-10");
   const [selectedDate, setSelectedDate] = useState("2026-10-01");
+  const [classMode, setClassMode] = useState<ClassMode>("Physical");
   const [tab, setTab] = useState<"overview" | "register" | "reports">(
     "overview"
   );
@@ -187,7 +193,7 @@ export default function Page() {
     let marked = 0;
 
     students.forEach((student) => {
-      const stats = getStats(student);
+      const stats = getStats(student, DATES, classMode);
       present += stats.present;
       absent += stats.absent;
       leave += stats.leave;
@@ -212,7 +218,7 @@ export default function Page() {
     );
   }
 
-  function addStudent(event: React.FormEvent<HTMLFormElement>) {
+  function addStudent(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!newStudent.name.trim()) {
@@ -310,12 +316,12 @@ export default function Page() {
     ];
 
     const rows = students.map((student) => {
-      const stats = getStats(student);
+      const stats = getStats(student, DATES, classMode);
       return [
         student.name,
         student.department,
         student.phone,
-        ...DATES.map((date) => student.attendance[date] || ""),
+        ...DATES.map((date) => student.attendance[attendanceKey(date, classMode)] || ""),
         stats.present,
         stats.absent,
         stats.leave,
@@ -323,7 +329,7 @@ export default function Page() {
       ];
     });
 
-    downloadCSV("UOS_PAIB_Full_Attendance_2026.csv", [headers, ...rows]);
+    downloadCSV(`PAIB_${classMode}_Full_Attendance_2026.csv`, [headers, ...rows]);
   }
 
   function exportMonthlyReport() {
@@ -339,12 +345,12 @@ export default function Page() {
     ];
 
     const rows = students.map((student) => {
-      const stats = getStats(student, currentDates);
+      const stats = getStats(student, currentDates, classMode);
       return [
         student.name,
         student.department,
         student.phone,
-        ...currentDates.map((date) => student.attendance[date] || ""),
+        ...currentDates.map((date) => student.attendance[attendanceKey(date, classMode)] || ""),
         stats.present,
         stats.absent,
         stats.leave,
@@ -352,7 +358,7 @@ export default function Page() {
       ];
     });
 
-    downloadCSV(`UOS_PAIB_${activeMonth}_Attendance.csv`, [
+    downloadCSV(`PAIB_${classMode}_${activeMonth}_Attendance.csv`, [
       headers,
       ...rows,
     ]);
@@ -365,7 +371,7 @@ export default function Page() {
     let unmarked = 0;
 
     students.forEach((student) => {
-      const status = student.attendance[selectedDate];
+      const status = student.attendance[attendanceKey(selectedDate, classMode)];
       if (status === "P") present++;
       else if (status === "A") absent++;
       else if (status === "L") leave++;
@@ -373,7 +379,7 @@ export default function Page() {
     });
 
     return { present, absent, leave, unmarked };
-  }, [students, selectedDate]);
+  }, [students, selectedDate, classMode]);
 
   const inputClass =
     "w-full rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm text-slate-800 outline-none transition placeholder:text-slate-400 focus:border-teal-500 focus:ring-2 focus:ring-teal-100";
@@ -398,13 +404,13 @@ export default function Page() {
               </div>
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.2em] text-teal-300">
-                  University of Sargodha
+                  PAIB
                 </p>
-                <h1 className="mt-1 text-2xl font-black tracking-tight sm:text-3xl">
-                  PAIB Attendance Portal
+                <h1 className="mt-1 text-xl font-black tracking-tight sm:text-2xl lg:text-3xl">
+                  Attendance Management System
                 </h1>
                 <p className="mt-2 text-sm text-slate-300">
-                   Pakistan Artificial Intelligence Blockchain · In-charge: Sir Asif
+                  Pakistan Artificial Intelligence Blockchain
                 </p>
               </div>
             </div>
@@ -547,7 +553,7 @@ export default function Page() {
             <div>
               <h2 className="text-lg font-bold">Attendance workspace</h2>
               <p className="mt-1 text-sm text-slate-500">
-                Mark present, absent or leave for a selected date.
+                Mark present, absent or leave for the selected date and class type.
               </p>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -571,7 +577,7 @@ export default function Page() {
             </div>
           </div>
 
-          <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
             <div>
               <label className="mb-1.5 block text-xs font-bold text-slate-600">
                 Select month
@@ -617,6 +623,20 @@ export default function Page() {
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
+            </div>
+            <div>
+              <label className="mb-1.5 block text-xs font-bold text-slate-600">
+                Class type
+              </label>
+              <select
+                className={inputClass}
+                value={classMode}
+                onChange={(e) => setClassMode(e.target.value as ClassMode)}
+                aria-label="Select class type"
+              >
+                <option value="Physical">Physical class</option>
+                <option value="Online">Online class</option>
+              </select>
             </div>
           </div>
 
@@ -704,7 +724,7 @@ export default function Page() {
 
                     students.forEach((student) => {
                       monthDates(month.value).forEach((date) => {
-                        const status = student.attendance[date];
+                        const status = student.attendance[attendanceKey(date, classMode)];
                         if (status) marked++;
                         if (status === "P") present++;
                       });
@@ -795,7 +815,7 @@ export default function Page() {
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredStudents.map((student) => {
-                    const status = student.attendance[selectedDate];
+                    const status = student.attendance[attendanceKey(selectedDate, classMode)];
 
                     return (
                       <tr key={student.id} className="hover:bg-slate-50">
@@ -937,7 +957,7 @@ export default function Page() {
                   </thead>
                   <tbody className="divide-y divide-slate-100">
                     {filteredStudents.map((student) => {
-                      const stats = getStats(student, currentDates);
+                      const stats = getStats(student, currentDates, classMode);
                       return (
                         <tr key={student.id}>
                           <td className="px-4 py-3 font-semibold">
@@ -1002,9 +1022,9 @@ export default function Page() {
 
         <footer className="pb-5 text-center text-xs leading-6 text-slate-500">
           <p className="font-semibold">
-            University of Sargodha ·  Pakistan Artificial Intelligence Blockchain
+            PAIB · Pakistan Artificial Intelligence Blockchain
           </p>
-          <p>Attendance register · October–December 2026</p>
+          <p>PAIB attendance register · October–December 2026</p>
           <p>Present = P · Absent = A · Leave = L</p>
         </footer>
       </div>
