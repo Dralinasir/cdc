@@ -1002,7 +1002,7 @@ export default function Page() {
 
         <footer className="pb-5 text-center text-xs leading-6 text-slate-500">
           <p className="font-semibold">
-            University of Sargodha · Career Development Center
+            University of Sargodha ·  Pakistan Artificial Intelligence Blockchain
           </p>
           <p>Attendance register · October–December 2026</p>
           <p>Present = P · Absent = A · Leave = L</p>
